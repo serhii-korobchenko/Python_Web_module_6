@@ -1,0 +1,2 @@
+Information serialized in bin format
+Information serialized in json format
