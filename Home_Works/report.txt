@@ -1,0 +1,19 @@
+File structure processing:
+
+    audio                                                                                                Folder    
+       pesnya_oj_u_luzi_chervona_kalina_pohililasya.mp3                                                     File      
+       viktor_pavlik_oj_u_luzi_chervona_kalina.mp3                                                          File      
+    documents                                                                                            Folder    
+       Alfa_corespondence.docx                                                                              File      
+       WG1_TORs_2016.pdf                                                                                    File      
+    images                                                                                               Folder    
+       arrow_play_arrows_svgrepo_com.svg                                                                    File      
+       coatofarmsofsomalia.png                                                                              File      
+       graph_analytics_business_3_svgrepo_com.svg                                                           File      
+       money_sign_bank_4_svgrepo_com.svg                                                                    File      
+       qw.jpg                                                                                               File      
+       viber_image_2022_09_10_07_50_10_621.jpg                                                              File      
+       viber_image_2022_09_10_07_50_10_820.jpg                                                              File      
+
+
+

@@ -23,26 +23,17 @@ done by script - 2. Create folders: images, documents, audio, video, archives
 8. Delete all empty folders
 9. Ignore folders: archives, video, audio, documents, images
 10. All found archives unpack in the same name folder in archives folder
-11. Do not remove files with unfamiliar extensons, but rename them
-NEW:
-13. Use asyncio module
-14. Use aiopath instead pathlib to remove and rename files
+11. Do not remove files with unfamiliar extensons, but rename them """
 
-
-
-"""
-
-
+from dataclasses import replace
 import os
-from pathlib import Path                     ###Path
+from pathlib import Path
 import re
 import shutil
 import sys
-from threading import Thread, Semaphore
-from time import time
 import asyncio
 from aiopath import AsyncPath
-
+from time import time
 
 #SET_UPS######################################################3
 
@@ -62,35 +53,10 @@ TRANSLATION = ("a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "j", "k", "l", 
 
 TRANS = {}
 
-TREADS = {}
-treads_flag = 0
-
-
-
 # Create dict trans with help of zip()
 for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
     TRANS[ord(c)] = l
     TRANS[ord(c.upper())] = l.upper()
-
-
-
-#CLASSES############################################
-
-class MyThread(Thread):
-
-    def __init__(self, path, k_space, name):
-        super().__init__()
-        self.path = path
-        self.k_space = k_space
-        self.name = name
-
-
-    def run(self):
-        timer = time()
-        search_function (self.path, self.k_space) # recursive case
-        print (f'Thread #{self.name} is Done. Time: {time()-timer}')
-
-
 
 #DEF#################################################
 
@@ -99,16 +65,15 @@ def search_function (path, k_space):
     folders with defined extensions.
 
     First parametr (path) - reveal carrent processing folder
-    Second parametr (k_space) - regulate empty space for diferenciation levels of nestiness """
+    Second parametr (k_space) - regulate emty space for diferenciation levels of nestiness """
 
     k_space += 1
     space = " " * 3 * k_space
-    global treads_flag
-
     
     if len(os.listdir(path)) == 0: # base case
-
-        return
+        # Delete empty folders
+        #Path.rmdir(path)
+        return 
     else:
         for i in path.iterdir():
             
@@ -119,32 +84,12 @@ def search_function (path, k_space):
             if i.is_dir() and i != 'images' and i != 'documents' and i != 'audio' and i != 'video' and i != 'archives' :
                 ### All our activities with folders
 
-                print(f'Path: {path}')
-                path = Path.joinpath(path, i)                  ###Path
-                path_num =len(str(path).split('\\'))
-                
-
-                if path_num == path_num_init+1:
-                    treads_flag += 1
-                    TREADS[treads_flag] = MyThread(path, k_space, treads_flag)
-                    TREADS[treads_flag].start()
-                    print(f'Tread #{treads_flag} started')
-                    print(f'Folder Name: {i}')
-                    TREADS[treads_flag].join()
-
-
-                else:
-
-                    # Recurcive case
-                    search_function(path, k_space)  # recursive case
-
-
-                #search_function (path, k_space) # recursive case
+                path = Path.joinpath(path, i)
+                search_function (path, k_space) # recursive case
                 
                 # Delete empty folders or rename it
-                if len(os.listdir(i)) == 0:
-
-                    Path.rmdir(i)        ###Path
+                if len(os.listdir(i)) == 0: 
+                    Path.rmdir(i)
                 
                 else:
                     #rename_folder ----> path = i
@@ -154,7 +99,6 @@ def search_function (path, k_space):
                 ### All our activities with files + archives
                 #rename_files ----> path = i
                 i = rename_func (i)
-
                                                
                 ### Files GRID
                 
@@ -217,7 +161,6 @@ def search_function (path, k_space):
                 continue                              
 
     k_space -= 1
-
     
     return k_space, set_files_images, set_files_documents, set_files_audio, set_files_video, set_files_archives
 
@@ -241,23 +184,27 @@ def normalize (name):
     """ Function normalize names files and folders"""
     
     p = name.translate(TRANS)
-    result = re.sub(r'[^a-zA-Z0-9.]', '_', p)
+    result = re.sub(r'[^a-zA-Z0-9\.]', '_', p)
     return result
 
 def rename_func (path):
 
-    path_file_item = Path (path)               ###Path
+    path_file_item = Path(path)
+
     path_folder_item = path_file_item.parent.absolute()
     old_name = os.path.basename(path_file_item)               
     new_name = normalize (old_name)
-    new_name_path = Path.joinpath(path_folder_item, new_name)  ###Path
-    target = Path.joinpath(path_folder_item, new_name)
+    new_name_path = Path.joinpath(path_folder_item, new_name)
+
+
 
     if new_name != old_name:
-        p.rename(target)      ###-----> RENAME
-        #os.rename(path_file_item, new_name_path, src_dir_fd=None, dst_dir_fd=None) ###-----> RENAME
+        path_file_item.rename(new_name_path)
+        #os.rename(path_file_item, new_name_path, src_dir_fd=None, dst_dir_fd=None)
     
+
     path = new_name_path
+
     return path
 
 def process_pictures (path):
@@ -265,7 +212,7 @@ def process_pictures (path):
     
     #print ('In Path >>>>', path)
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'images')   ###Path
+    path_base = Path.joinpath(p, 'images')
 
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -275,16 +222,16 @@ def process_pictures (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)       ###Path
+    dest_pass = Path.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)    ###------> MOVE
+    shutil.move(path, dest_pass)
         
 def process_video (path):
     """ Function process video category"""
         
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'video')                    ###Path
+    path_base = Path.joinpath(p, 'video')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -294,16 +241,16 @@ def process_video (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)      ###Path
+    dest_pass = Path.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)            ###------> MOVE
+    shutil.move(path, dest_pass)
 
 def process_documents (path):
     """ Function process documents category"""
     
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'documents')                      ###Path
+    path_base = Path.joinpath(p, 'documents')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -313,16 +260,16 @@ def process_documents (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)                ###Path
+    dest_pass = Path.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)                 ###------> MOVE
+    shutil.move(path, dest_pass)
 
 def process_audio (path):
     """ Function process music category"""
     
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'audio')            ###Path
+    path_base = Path.joinpath(p, 'audio')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -332,16 +279,16 @@ def process_audio (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)            ###Path
+    dest_pass = Path.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)              ###------> MOVE
+    shutil.move(path, dest_pass)
 
 def process_archives (path):
     """ Function process archives category"""
     
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'archives')             ###Path
+    path_base = Path.joinpath(p, 'archives')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -351,35 +298,34 @@ def process_archives (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)           ###Path
+    dest_pass = Path.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)                          ###------> MOVE
+    shutil.move(path, dest_pass)
     shutil.unpack_archive(dest_pass, path_base)
     os.remove(dest_pass)
 
 #MAIN_BODY########################################
+timer = time()
 print('LOG:')
 #print(f'Target folder is: {p}.')
 
 with open('report.txt', 'w') as report:
-    total_timer = time()
     if __name__ == '__main__':
         if sys.argv[1]:
-            p = Path(sys.argv[1])                     ###Path
-            path_num_init = (len(str(p).split('\\')))
 
+
+            p = Path(sys.argv[1])
             print(f'Target folder is: {p}.')
     
             report.write('File structure processing:' + '\n\n')
             search_function (p, 0)
-
             report.write('\n\n\n')
 
 print (f'You could read report file (report.txt) in your current directory')
-print(f"Total time is: {time()-total_timer}")
+print(f'Total time: {time() - timer}')
 
-# python Module_6Web_HW_Korobchenko_01.py D:\TEST\Garbage
+# python Module_6_HW_Korobchenko.py D:\TEST\Garbage
     
 
     
