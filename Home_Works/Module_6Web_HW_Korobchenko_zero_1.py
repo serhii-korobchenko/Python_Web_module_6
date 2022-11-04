@@ -37,14 +37,7 @@ from time import time
 
 #SET_UPS######################################################3
 
-### Set up data containers
-set_files_images = set()
-set_files_documents = set()
-set_files_audio = set()
-set_files_video = set()
-set_files_archives = set()
-set_fam_extension = set()
-set_unfam_extension = set()
+
 
 ### Set_up for normilize function
 CYRILLIC_SYMBOLS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґ"
@@ -60,7 +53,7 @@ for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
 
 #DEF#################################################
 
-def search_function (path, k_space):   
+async def search_function (path, k_space):
     """ Function scan intendent folder at all levels of nestiness and find files and 
     folders with defined extensions.
 
@@ -75,30 +68,30 @@ def search_function (path, k_space):
         #Path.rmdir(path)
         return 
     else:
-        for i in path.iterdir():
+        async for i in path.iterdir():
             
             on_print = '{:<0} {:<100} {:<10}'.format(space, i.name, 'Folder' if i.is_dir() else 'File')
             
-            report.write(on_print + '\n')
+
             
             if i.is_dir() and i != 'images' and i != 'documents' and i != 'audio' and i != 'video' and i != 'archives' :
                 ### All our activities with folders
 
-                path = Path.joinpath(path, i)
-                search_function (path, k_space) # recursive case
+                path = AsyncPath.joinpath(path, i)
+                await search_function (path, k_space) # recursive case
                 
                 # Delete empty folders or rename it
                 if len(os.listdir(i)) == 0: 
-                    Path.rmdir(i)
+                    await AsyncPath.rmdir(i)
                 
                 else:
                     #rename_folder ----> path = i
-                    rename_func (i)
+                    await rename_func (i)
 
             else:
                 ### All our activities with files + archives
                 #rename_files ----> path = i
-                i = rename_func (i)
+                i = await rename_func (i)
                                                
                 ### Files GRID
                 
@@ -106,20 +99,20 @@ def search_function (path, k_space):
                 if i.suffix == '.jpeg' or i.suffix == '.png' or i.suffix == '.jpg' or i.suffix == '.svg':
                     
                     #add file in images list
-                    set_files_images.add(os.path.basename(i))
+                    #set_files_images.add(os.path.basename(i))
                     
                     # add sufix to familiar list
-                    set_fam_extension.add(i.suffix)
-                    process_pictures (i)
+                    #set_fam_extension.add(i.suffix)
+                    await process_pictures (i)
 
                 # video
                 elif i.suffix == '.avi' or i.suffix == '.mp4' or i.suffix == '.mov' or i.suffix == '.mkv':
                     
                     #add file in video list
-                    set_files_video.add(os.path.basename(i))
+                    #set_files_video.add(os.path.basename(i))
                    
                     # add sufix to familiar list
-                    set_fam_extension.add(i.suffix)
+                    #set_fam_extension.add(i.suffix)
                     
                     process_video (i)
                 
@@ -127,10 +120,10 @@ def search_function (path, k_space):
                 elif i.suffix == '.doc' or i.suffix == '.docx' or i.suffix == '.txt' or i.suffix == '.pdf' or i.suffix == '.xlsx' or i.suffix == '.pptx':
                     
                     #add file in video list
-                    set_files_documents.add(os.path.basename(i))
+                    #set_files_documents.add(os.path.basename(i))
                    
                     # add sufix to familiar list
-                    set_fam_extension.add(i.suffix)
+                    #set_fam_extension.add(i.suffix)
                     
                     process_documents (i)
                 
@@ -138,10 +131,10 @@ def search_function (path, k_space):
                 elif i.suffix == '.mp3' or i.suffix == '.ogg' or i.suffix == '.wav' or i.suffix == '.amr':
                     
                     #add file in video list
-                    set_files_audio.add(os.path.basename(i))
+                    #set_files_audio.add(os.path.basename(i))
                   
                     # add sufix to familiar list
-                    set_fam_extension.add(i.suffix)
+                    #set_fam_extension.add(i.suffix)
                     
                     process_audio (i)
                 
@@ -149,36 +142,26 @@ def search_function (path, k_space):
                 elif i.suffix == '.zip' or i.suffix == '.gz' or i.suffix == '.tar':
                     
                     #add file in video list
-                    set_files_archives.add(os.path.basename(i))
+                    #set_files_archives.add(os.path.basename(i))
                   
                     # add sufix to familiar list
-                    set_fam_extension.add(i.suffix)
+                    #set_fam_extension.add(i.suffix)
                     
                     process_archives (i)
-                else:
-                    set_unfam_extension.add(i.suffix)
+                #else:
+                    #set_unfam_extension.add(i.suffix)
 
                 continue                              
 
     k_space -= 1
     
-    return k_space, set_files_images, set_files_documents, set_files_audio, set_files_video, set_files_archives
+    return await k_space
 
 def namestr(obj, namespace):
     """ Function return name of veriable in string"""
     
     return [name for name in namespace if namespace[name] is obj]
 
-def set_prep_for_write (set_x):
-    """ Function write list of categories in report file"""
-
-    with open('report.txt', 'a') as report:
-        
-        report.write(f'{namestr(set_x, globals())}: \n') 
-        for item in set_x:
-           report.write(str(item) + '\n') 
-        report.write('\n\n')
-    return namestr(set_x, globals())
 
 def normalize (name):
     """ Function normalize names files and folders"""
@@ -187,32 +170,32 @@ def normalize (name):
     result = re.sub(r'[^a-zA-Z0-9\.]', '_', p)
     return result
 
-def rename_func (path):
+async def rename_func (path):
 
-    path_file_item = Path(path)
+    path_file_item = AsyncPath(path)
 
     path_folder_item = path_file_item.parent.absolute()
     old_name = os.path.basename(path_file_item)               
     new_name = normalize (old_name)
-    new_name_path = Path.joinpath(path_folder_item, new_name)
+    new_name_path = AsyncPath.joinpath(path_folder_item, new_name)
 
 
 
     if new_name != old_name:
-        path_file_item.rename(new_name_path)
+        await path_file_item.rename(new_name_path)
         #os.rename(path_file_item, new_name_path, src_dir_fd=None, dst_dir_fd=None)
     
 
     path = new_name_path
 
-    return path
+    return await path
 
-def process_pictures (path):
+async def process_pictures (path):
     """ Function process pictures category"""
     
     #print ('In Path >>>>', path)
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'images')
+    path_base = AsyncPath.joinpath(p, 'images')
 
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -222,7 +205,7 @@ def process_pictures (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)
+    dest_pass = AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
     shutil.move(path, dest_pass)
@@ -231,7 +214,7 @@ def process_video (path):
     """ Function process video category"""
         
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'video')
+    path_base = AsyncPath.joinpath(p, 'video')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -241,7 +224,7 @@ def process_video (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)
+    dest_pass = AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
     shutil.move(path, dest_pass)
@@ -250,7 +233,7 @@ def process_documents (path):
     """ Function process documents category"""
     
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'documents')
+    path_base = AsyncPath.joinpath(p, 'documents')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -260,7 +243,7 @@ def process_documents (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)
+    dest_pass = AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
     shutil.move(path, dest_pass)
@@ -269,7 +252,7 @@ def process_audio (path):
     """ Function process music category"""
     
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'audio')
+    path_base = AsyncPath.joinpath(p, 'audio')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -279,7 +262,7 @@ def process_audio (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)
+    dest_pass = AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
     shutil.move(path, dest_pass)
@@ -288,7 +271,7 @@ def process_archives (path):
     """ Function process archives category"""
     
     # Make dir if it does not exist yet
-    path_base = Path.joinpath(p, 'archives')
+    path_base = AsyncPath.joinpath(p, 'archives')
     
     isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
@@ -298,7 +281,7 @@ def process_archives (path):
 
     file_name = os.path.basename(path)
     
-    dest_pass = Path.joinpath(path_base, file_name)
+    dest_pass = AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
     shutil.move(path, dest_pass)
@@ -306,24 +289,24 @@ def process_archives (path):
     os.remove(dest_pass)
 
 #MAIN_BODY########################################
-timer = time()
-print('LOG:')
-#print(f'Target folder is: {p}.')
+async def main():
+    global p
+    timer = time()
+    print('LOG:')
+    if sys.argv[1]:
+        p = AsyncPath(sys.argv[1])
+        print(f'Target folder is: {p}.')
+        await search_function(p, 0)
 
-with open('report.txt', 'w') as report:
-    if __name__ == '__main__':
-        if sys.argv[1]:
+    print(f'You could read report file (report.txt) in your current directory')
+    print(f'Total time: {time() - timer}')
 
 
-            p = Path(sys.argv[1])
-            print(f'Target folder is: {p}.')
-    
-            report.write('File structure processing:' + '\n\n')
-            search_function (p, 0)
-            report.write('\n\n\n')
 
-print (f'You could read report file (report.txt) in your current directory')
-print(f'Total time: {time() - timer}')
+
+if __name__ == '__main__':
+    asyncio.run (main())
+
 
 # python Module_6_HW_Korobchenko.py D:\TEST\Garbage
     
