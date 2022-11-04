@@ -34,6 +34,7 @@ import sys
 import asyncio
 from aiopath import AsyncPath
 from time import time
+import aioshutil
 
 #SET_UPS######################################################3
 
@@ -53,15 +54,14 @@ for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
 
 #DEF#################################################
 
-async def search_function (path, k_space):
+async def search_function (path: AsyncPath):
     """ Function scan intendent folder at all levels of nestiness and find files and 
     folders with defined extensions.
 
     First parametr (path) - reveal carrent processing folder
     Second parametr (k_space) - regulate emty space for diferenciation levels of nestiness """
 
-    k_space += 1
-    space = " " * 3 * k_space
+
     
     if len(os.listdir(path)) == 0: # base case
         # Delete empty folders
@@ -69,19 +69,15 @@ async def search_function (path, k_space):
         return 
     else:
         async for i in path.iterdir():
-            
-            on_print = '{:<0} {:<100} {:<10}'.format(space, i.name, 'Folder' if i.is_dir() else 'File')
-            
 
-            
             if i.is_dir() and i != 'images' and i != 'documents' and i != 'audio' and i != 'video' and i != 'archives' :
                 ### All our activities with folders
 
                 path = AsyncPath.joinpath(path, i)
-                await search_function (path, k_space) # recursive case
+                await search_function (path) # recursive case
                 
                 # Delete empty folders or rename it
-                if len(os.listdir(i)) == 0: 
+                if len(i.iterdir()) == 0:
                     await AsyncPath.rmdir(i)
                 
                 else:
@@ -151,11 +147,8 @@ async def search_function (path, k_space):
                 #else:
                     #set_unfam_extension.add(i.suffix)
 
-                continue                              
-
-    k_space -= 1
-    
-    return await k_space
+                continue
+    return
 
 def namestr(obj, namespace):
     """ Function return name of veriable in string"""
@@ -197,95 +190,95 @@ async def process_pictures (path):
     # Make dir if it does not exist yet
     path_base = AsyncPath.joinpath(p, 'images')
 
-    isExist = os.path.exists(path_base) # Check whether the specified path exists or not
+    isExist = await path_base.is_dir() # Check whether the specified path exists or not
 
-    if not isExist:
-        os.makedirs(path_base)  # Create a new directory because it does not exist 
+    if not await isExist:
+        await path_base.mkdir(exist_ok=True, parents=True)  # Create a new directory because it does not exist
         #print("Images directory has been created!")
 
     file_name = os.path.basename(path)
     
-    dest_pass = AsyncPath.joinpath(path_base, file_name)
+    dest_pass = await AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)
+    await aioshutil.move(path, dest_pass)
         
-def process_video (path):
+async def process_video (path):
     """ Function process video category"""
         
     # Make dir if it does not exist yet
-    path_base = AsyncPath.joinpath(p, 'video')
-    
-    isExist = os.path.exists(path_base) # Check whether the specified path exists or not
+    path_base = await AsyncPath.joinpath(p, 'video')
 
-    if not isExist:
-        os.makedirs(path_base)  # Create a new directory because it does not exist 
-        #print("Video directory has been created!")
+    isExist = await path_base.is_dir()  # Check whether the specified path exists or not
+
+    if not await isExist:
+        await path_base.mkdir(exist_ok=True, parents=True)  # Create a new directory because it does not exist
+        # print("Images directory has been created!")
 
     file_name = os.path.basename(path)
-    
-    dest_pass = AsyncPath.joinpath(path_base, file_name)
-    #print ('Dest path>>>>', dest_pass)
-    
-    shutil.move(path, dest_pass)
 
-def process_documents (path):
+    dest_pass = await AsyncPath.joinpath(path_base, file_name)
+    # print ('Dest path>>>>', dest_pass)
+
+    await aioshutil.move(path, dest_pass)
+
+async def process_documents (path):
     """ Function process documents category"""
     
     # Make dir if it does not exist yet
-    path_base = AsyncPath.joinpath(p, 'documents')
-    
-    isExist = os.path.exists(path_base) # Check whether the specified path exists or not
+    path_base = await AsyncPath.joinpath(p, 'documents')
 
-    if not isExist:
-        os.makedirs(path_base)  # Create a new directory because it does not exist 
-        #print("Documents directory has been created!")
+    isExist = await path_base.is_dir()  # Check whether the specified path exists or not
+
+    if not await isExist:
+        await path_base.mkdir(exist_ok=True, parents=True)  # Create a new directory because it does not exist
+        # print("Images directory has been created!")
 
     file_name = os.path.basename(path)
-    
-    dest_pass = AsyncPath.joinpath(path_base, file_name)
-    #print ('Dest path>>>>', dest_pass)
-    
-    shutil.move(path, dest_pass)
 
-def process_audio (path):
+    dest_pass = await AsyncPath.joinpath(path_base, file_name)
+    # print ('Dest path>>>>', dest_pass)
+
+    await aioshutil.move(path, dest_pass)
+
+async def process_audio (path):
     """ Function process music category"""
     
     # Make dir if it does not exist yet
-    path_base = AsyncPath.joinpath(p, 'audio')
-    
-    isExist = os.path.exists(path_base) # Check whether the specified path exists or not
+    path_base = await AsyncPath.joinpath(p, 'audio')
 
-    if not isExist:
-        os.makedirs(path_base)  # Create a new directory because it does not exist 
-        #print("Audio directory has been created!")
+    isExist = await path_base.is_dir()  # Check whether the specified path exists or not
+
+    if not await isExist:
+        await path_base.mkdir(exist_ok=True, parents=True)  # Create a new directory because it does not exist
+        # print("Images directory has been created!")
 
     file_name = os.path.basename(path)
-    
-    dest_pass = AsyncPath.joinpath(path_base, file_name)
-    #print ('Dest path>>>>', dest_pass)
-    
-    shutil.move(path, dest_pass)
 
-def process_archives (path):
+    dest_pass = await AsyncPath.joinpath(path_base, file_name)
+    # print ('Dest path>>>>', dest_pass)
+
+    await aioshutil.move(path, dest_pass)
+
+async def process_archives (path):
     """ Function process archives category"""
     
     # Make dir if it does not exist yet
     path_base = AsyncPath.joinpath(p, 'archives')
-    
-    isExist = os.path.exists(path_base) # Check whether the specified path exists or not
 
-    if not isExist:
-        os.makedirs(path_base)  # Create a new directory because it does not exist 
-        #print("Archives directory has been created!")
+    isExist = await path_base.is_dir()  # Check whether the specified path exists or not
+
+    if not await isExist:
+        await path_base.mkdir(exist_ok=True, parents=True)  # Create a new directory because it does not exist
+        # print("Images directory has been created!")
 
     file_name = os.path.basename(path)
-    
-    dest_pass = AsyncPath.joinpath(path_base, file_name)
+
+    dest_pass = await AsyncPath.joinpath(path_base, file_name)
     #print ('Dest path>>>>', dest_pass)
     
-    shutil.move(path, dest_pass)
-    shutil.unpack_archive(dest_pass, path_base)
+    await aioshutil.move(path, dest_pass)
+    await aioshutil.unpack_archive(dest_pass, path_base)
     os.remove(dest_pass)
 
 #MAIN_BODY########################################
@@ -296,16 +289,13 @@ async def main():
     if sys.argv[1]:
         p = AsyncPath(sys.argv[1])
         print(f'Target folder is: {p}.')
-        await search_function(p, 0)
+        await search_function(p)
 
     print(f'You could read report file (report.txt) in your current directory')
     print(f'Total time: {time() - timer}')
 
-
-
-
 if __name__ == '__main__':
-    asyncio.run (main())
+    asyncio.run(main())
 
 
 # python Module_6_HW_Korobchenko.py D:\TEST\Garbage
